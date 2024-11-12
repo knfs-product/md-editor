@@ -28,16 +28,167 @@ const closePdf = document.getElementById("closePdf");
 const exportOptionsModal = document.getElementById("exportOptionsModal");
 const downloadMarkdownButton = document.getElementById("downloadMarkdown");
 const markdownInput = document.getElementById("markdownInput");
+const infoDisplay = document.getElementById("infoDisplay");
+const insertTableButton = document.getElementById("insertTable");
+
+const undoStack = [];
+const redoStack = [];
+
+const md = window.markdownit()
+	// .use(window.markdownitKatex)
+	// .use(window.markdownitMermaid);
+
+function updateInfo() {
+	const content = markdownInput.value;
+	const lines = content.split('\n').length;
+	const words = content.match(/\b\w+\b/g)?.length || 0;
+	const fileSize = new Blob([content], { type: 'text/markdown' }).size;
+
+	const cursorPosition = markdownInput.selectionStart;
+	const contentUpToCursor = content.substring(0, cursorPosition);
+	const currentLine = contentUpToCursor.split('\n').length;
+	const currentColumn = contentUpToCursor.split('\n').pop().length + 1;
+
+	infoDisplay.innerHTML = `
+        <p class="mr-2"><strong>${fileSize}</strong> bytes</p>
+        <p class="mr-2"><strong>${lines}</strong> lines</p>
+        <p class="mr-2"><strong>${words}</strong> words</p>
+        <p class="mr-2">Ln ${currentLine}, Col ${currentColumn}</p>
+    `;
+}
+
+function undo() {
+	if (undoStack.length > 0) {
+		redoStack.push(markdownInput.value);
+		const previousState = undoStack.pop();
+		markdownInput.value = previousState;
+		preview.innerHTML = md.render(previousState);
+	}
+}
+
+function redo() {
+	if (redoStack.length > 0) {
+		undoStack.push(markdownInput.value);
+		const nextState = redoStack.pop();
+		markdownInput.value = nextState;
+		preview.innerHTML = md.render(nextState);
+	}
+}
+
+function insertTextAtCursor(text) {
+	const startPos = markdownInput.selectionStart;
+	const endPos = markdownInput.selectionEnd;
+	const beforeText = markdownInput.value.substring(0, startPos);
+	const afterText = markdownInput.value.substring(endPos);
+	markdownInput.value = beforeText + text + afterText;
+	undoStack.push(markdownInput.value);
+	markdownInput.focus();
+	markdownInput.selectionEnd = startPos + text.length;
+	markdownInput.dispatchEvent(new Event('input'));
+}
+
+function wrapTextWithFormatting(startWrapper, endWrapper = startWrapper) {
+	const startPos = markdownInput.selectionStart;
+	const endPos = markdownInput.selectionEnd;
+	const selectedText = markdownInput.value.substring(startPos, endPos);
+
+	if (selectedText) {
+		const beforeText = markdownInput.value.substring(0, startPos);
+		const afterText = markdownInput.value.substring(endPos);
+		markdownInput.value = beforeText + startWrapper + selectedText + endWrapper + afterText;
+		undoStack.push(markdownInput.value);
+		markdownInput.focus();
+		markdownInput.selectionStart = startPos;
+		markdownInput.selectionEnd = endPos + startWrapper.length + endWrapper.length;
+		markdownInput.dispatchEvent(new Event('input'));
+	} else {
+		insertTextAtCursor(startWrapper + "text" + endWrapper);
+	}
+}
+
+function renderPreview() {
+	const markdownText = markdownInput.value;
+	undoStack.push(markdownText);
+	preview.innerHTML = md.render(markdownText);
+}
 
 fontSelect.addEventListener("change", () => {
 	const selectedFont = fontSelect.value;
 	preview.style.fontFamily = selectedFont;
 });
 
-markdownInput.addEventListener("input", () => {
-	const markdownText = markdownInput.value;
-	preview.innerHTML = marked.parse(markdownText);
+document.getElementById("boldButton").addEventListener("click", () => {
+	wrapTextWithFormatting("**");
 });
+
+document.getElementById("italicButton").addEventListener("click", () => {
+	wrapTextWithFormatting("*");
+});
+
+document.getElementById("strikethroughButton").addEventListener("click", () => {
+	wrapTextWithFormatting("~~");
+});
+
+document.getElementById("orderedListButton").addEventListener("click", () => {
+	wrapTextWithFormatting("1. ", "\n");
+});
+
+document.getElementById("unorderedListButton").addEventListener("click", () => {
+	wrapTextWithFormatting("- ", "\n");
+});
+
+document.getElementById("linkButton").addEventListener("click", () => {
+	wrapTextWithFormatting("[", "](url)");
+});
+
+document.getElementById("imageButton").addEventListener("click", () => {
+	wrapTextWithFormatting("![", "](image_url)");
+});
+
+function insertTableMarkdown() {
+	const tableMarkdown =
+		`| Header 1 | Header 2 |
+| -------- | -------- |
+| Cell 1   | Cell 2   |
+| Cell 3   | Cell 4   |\n`;
+	const selectionStart = markdownInput.selectionStart;
+	const selectionEnd = markdownInput.selectionEnd;
+
+	markdownInput.setRangeText(tableMarkdown, selectionStart, selectionEnd, 'end');
+	markdownInput.dispatchEvent(new Event('input'));
+}
+
+insertTableButton.addEventListener("click", insertTableMarkdown);
+
+function addHeaderMarkdown(headerLevel) {
+	const selectionStart = markdownInput.selectionStart;
+	const selectionEnd = markdownInput.selectionEnd;
+	const selectedText = markdownInput.value.substring(selectionStart, selectionEnd);
+	const prefix = "#".repeat(headerLevel) + " ";
+
+	const newText = prefix + selectedText;
+
+	markdownInput.setRangeText(newText, selectionStart, selectionEnd, 'end');
+	markdownInput.dispatchEvent(new Event('input'));
+}
+
+document.getElementById("headerH1").addEventListener("click", () => addHeaderMarkdown(1));
+document.getElementById("headerH2").addEventListener("click", () => addHeaderMarkdown(2));
+document.getElementById("headerH3").addEventListener("click", () => addHeaderMarkdown(3));
+document.getElementById("headerH4").addEventListener("click", () => addHeaderMarkdown(4));
+document.getElementById("headerH5").addEventListener("click", () => addHeaderMarkdown(5));
+document.getElementById("headerH6").addEventListener("click", () => addHeaderMarkdown(6));
+
+document.getElementById("undoButton").addEventListener("click", undo);
+document.getElementById("redoButton").addEventListener("click", redo);
+
+markdownInput.addEventListener("input", () => {
+	updateInfo();
+	renderPreview();
+});
+markdownInput.addEventListener("click", updateInfo);
+markdownInput.addEventListener("change", updateInfo);
+markdownInput.addEventListener("keyup", updateInfo);
 
 downloadMarkdownButton.addEventListener("click", () => {
 	const markdownContent = markdownInput.value;
@@ -58,7 +209,7 @@ var modalInstance;
 exportButton.addEventListener("click", () => {
 	preview.scrollTop = 0;
 	modalInstance = new bootstrap.Modal(exportOptionsModal);
-	modalInstance.show()
+	modalInstance.show();
 });
 
 closePdf.addEventListener("click", () => {
@@ -67,55 +218,24 @@ closePdf.addEventListener("click", () => {
 	}
 });
 
-
-
 const pageSizeSelect = document.getElementById("pageSize");
 const orientationSelect = document.getElementById("orientation");
 const imageQualityInput = document.getElementById("imageQuality");
 const previewPdfButton = document.getElementById("previewPdf");
 const downloadPdfButton = document.getElementById("downloadPdf");
-const pdfPreviewContainer = document.getElementById("pdfPreview");
 
 previewPdfButton.addEventListener("click", () => {
-	preview.scrollTop = 0;
-
-	const pageSize = pageSizeSelect.value;
-	const orientation = orientationSelect.value;
-	const imageQuality = imageQualityInput.value;
-
-	const options = {
-		margin: 1,
-		filename: "KNFs_markdown_preview.pdf",
-		image: { type: "jpeg", quality: imageQuality / 100 },
-		html2canvas: { scale: 1 },
-		jsPDF: { unit: "in", format: pageSize, orientation: orientation }
-	};
-
-	pdfPreviewContainer.innerHTML = "Loading preview...";
-
-	html2pdf().set(options).from(preview).outputImg("datauristring").then((dataUri) => {
-		const imgElement = document.createElement("img");
-		imgElement.src = dataUri;
-		imgElement.style.width = "100%";
-		pdfPreviewContainer.innerHTML = "";
-		pdfPreviewContainer.appendChild(imgElement);
+	console.log("Preview PDF with settings:", {
+		pageSize: pageSizeSelect.value,
+		orientation: orientationSelect.value,
+		imageQuality: imageQualityInput.value,
 	});
 });
 
 downloadPdfButton.addEventListener("click", () => {
-	preview.scrollTop = 0;
-
-	const pageSize = pageSizeSelect.value;
-	const orientation = orientationSelect.value;
-	const imageQuality = imageQualityInput.value;
-
-	const options = {
-		margin: 1,
-		filename: "KNFs_markdown.pdf",
-		image: { type: "jpeg", quality: imageQuality / 100 },
-		html2canvas: { scale: 1 },
-		jsPDF: { unit: "in", format: pageSize, orientation: orientation }
-	};
-
-	html2pdf().set(options).from(preview).save();
+	console.log("Download PDF with settings:", {
+		pageSize: pageSizeSelect.value,
+		orientation: orientationSelect.value,
+		imageQuality: imageQualityInput.value,
+	});
 });
