@@ -225,17 +225,45 @@ const previewPdfButton = document.getElementById("previewPdf");
 const downloadPdfButton = document.getElementById("downloadPdf");
 
 previewPdfButton.addEventListener("click", () => {
-	console.log("Preview PDF with settings:", {
-		pageSize: pageSizeSelect.value,
-		orientation: orientationSelect.value,
-		imageQuality: imageQualityInput.value,
+	preview.scrollTop = 0;
+
+	const pageSize = pageSizeSelect.value;
+	const orientation = orientationSelect.value;
+	const imageQuality = imageQualityInput.value;
+
+	const options = {
+		margin: 1,
+		filename: "KNFs_markdown_preview.pdf",
+		image: { type: "jpeg", quality: imageQuality / 100 },
+		html2canvas: { scale: 1 },
+		jsPDF: { unit: "in", format: pageSize, orientation: orientation }
+	};
+
+	pdfPreviewContainer.innerHTML = "Loading preview...";
+
+	html2pdf().set(options).from(preview).outputImg("datauristring").then((dataUri) => {
+		const imgElement = document.createElement("img");
+		imgElement.src = dataUri;
+		imgElement.style.width = "100%";
+		pdfPreviewContainer.innerHTML = "";
+		pdfPreviewContainer.appendChild(imgElement);
 	});
 });
 
 downloadPdfButton.addEventListener("click", () => {
-	console.log("Download PDF with settings:", {
-		pageSize: pageSizeSelect.value,
-		orientation: orientationSelect.value,
-		imageQuality: imageQualityInput.value,
-	});
+	preview.scrollTop = 0;
+
+	const pageSize = pageSizeSelect.value;
+	const orientation = orientationSelect.value;
+	const imageQuality = imageQualityInput.value;
+
+	const options = {
+		margin: 1,
+		filename: "KNFs_markdown.pdf",
+		image: { type: "jpeg", quality: imageQuality / 100 },
+		html2canvas: { scale: 1 },
+		jsPDF: { unit: "in", format: pageSize, orientation: orientation }
+	};
+
+	html2pdf().set(options).from(preview).save();
 });
