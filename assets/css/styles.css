@@ -32,9 +32,12 @@ body {
 .markdown-preview {
 	color: black !important;
 	background-color: white;
-	height: 900px;
+	height: fit-content;
 	overflow-y: auto;
+	overflow-x: auto;
 	padding: 1em;
+	max-height: 1000px;
+	min-height: 600px;
 }
 
 i {
@@ -291,11 +294,29 @@ button:hover {
 	flex: 1;
 	padding: 20px;
 	background-color: white;
-	height: 900px;
+	height: fit-content;
+	min-height: 600px;
+	max-height: max-content;
 }
 
 .editor textarea {
-	min-height: 600px;
+	min-height: 300px;
 	max-height: 800px;
 	position: relative;
+}
+
+#searchReplaceContainer {
+	display: none;
+	flex-direction: column;
+	align-items: flex-start;
+	padding: 10px;
+	background-color: #f8f9fa;
+	border-radius: 8px;
+	border: 1px solid #ccc;
+	width: 400px;
+	margin: 20px;
+}
+
+.edit-area {
+	height: fit-content;
 }

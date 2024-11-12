@@ -48,7 +48,7 @@
 	</section>
 	<div class="container-fluid mt-4">
 		<div class="row" style="width: 100%; padding-left: 2em;">
-			<div class="col-md-6">
+			<div class="col-md-6 edit-area">
 				<div class="form-floating editor">
 					<div class="action">
 						<div class="d-flex align-items-center">
@@ -67,6 +67,11 @@
 								<option value="Courier New">Courier New</option>
 								<option value="Times New Roman">Times New Roman</option>
 							</select>
+						</div>
+						<div class="btn-group" role="group">
+							<button id="searchButton" type="button" class="btn btn-secondary">
+								<i class="bi bi-search" style="color: white"></i>
+							</button>
 						</div>
 						<div class="btn-group" role="group">
 							<button id="headerH1" type="button" class="btn btn-secondary">
@@ -119,6 +124,35 @@
 							<button id="exportPdf" type="button" class="btn btn-secondary">
 								<i class="bi bi-file-earmark-pdf-fill" style="color: white;"></i>
 							</button>
+						</div>
+						<div id="searchReplaceContainer">
+							<div class="form-group d-flex align-items-center" style="gap: 8px;">
+								<input type="text" id="searchInput" class="form-control" placeholder="Find" aria-describedby="button-addon2" />
+								<div class="d-flex align-items-center" role="group" style="gap: 4px;">
+									<span id="resultCount" style="color: black; margin-left: 4px;">0</span>
+									<span>results</span>
+								</div>
+								<div class="d-flex" role="group" style="gap: 4px;">
+									<button id="prevButton" type="button" class="btn btn-secondary" style="background: #333; border: none;">
+										<i class="bi bi-arrow-up" style="color: white"></i>
+									</button>
+									<button id="nextButton" type="button" class="btn btn-secondary" style="background: #333; border: none;">
+										<i class="bi bi-arrow-down" style="color: white;"></i>
+									</button>
+								</div>
+							</div>
+							<div class="form-group d-flex align-items-center" style="gap: 8px;">
+								<input type="text" id="replaceInput" class="form-control" placeholder="Replace" />
+								<div class="d-flex" role="group" style="gap: 4px;">
+									<button id="replaceButton" type="button" class="btn btn-secondary" style="background: #333; border: none;">
+										<i class="bi bi-sticky" style="color: white"></i>
+									</button>
+									<button id="replaceAllButton" type="button" class="btn btn-secondary"
+										style="background: #333; border: none;">
+										<i class="bi bi-stickies" style="color: white"></i>
+									</button>
+								</div>
+							</div>
 						</div>
 					</div>
 					<div class="mt-4">
@@ -227,7 +261,7 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button id="closePdf" type="button" class="btn-close" data-bs-dismiss="modal">Close</button>
+					<button id="closePdf" type="button" class="btn btn-close" data-bs-dismiss="modal">Close</button>
 					<button id="downloadPdf" class="btn btn-primary">Download PDF</button>
 				</div>
 			</div>

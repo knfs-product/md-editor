@@ -30,6 +30,10 @@ const downloadMarkdownButton = document.getElementById("downloadMarkdown");
 const markdownInput = document.getElementById("markdownInput");
 const infoDisplay = document.getElementById("infoDisplay");
 const insertTableButton = document.getElementById("insertTable");
+const searchInput = document.getElementById("searchInput");
+const replaceInput = document.getElementById("replaceInput");
+const resultCount = document.getElementById("resultCount");
+
 
 const undoStack = [];
 const redoStack = [];
@@ -182,6 +186,96 @@ document.getElementById("headerH6").addEventListener("click", () => addHeaderMar
 document.getElementById("undoButton").addEventListener("click", undo);
 document.getElementById("redoButton").addEventListener("click", redo);
 
+document.getElementById("searchButton").addEventListener("click", function () {
+	const searchReplaceContainer = document.getElementById("searchReplaceContainer");
+	if (searchReplaceContainer.style.display === "none" || searchReplaceContainer.style.display === "") {
+		searchReplaceContainer.style.display = "flex";
+	} else {
+		searchReplaceContainer.style.display = "none";
+	}
+});
+
+let currentIndex = 0;
+let matches = [];
+
+function search() {
+	const searchText = searchInput.value.trim();
+	const content = document.getElementById("markdownInput").value;
+
+	// Reset previous matches
+	matches = [];
+	currentIndex = 0;
+
+	if (searchText) {
+		const regex = new RegExp(searchText, "gi");
+		let match;
+
+		while ((match = regex.exec(content)) !== null) {
+			matches.push(match.index);
+		}
+	}
+
+	updateResultCount();
+}
+
+function updateResultCount() {
+	resultCount.textContent = `${matches.length}`;
+}
+
+function highlightMatch() {
+	if (matches.length > 0) {
+		const content = document.getElementById("markdownInput").value;
+		const position = matches[currentIndex];
+
+		// Scroll to the match
+		document.getElementById("markdownInput").focus();
+		document.getElementById("markdownInput").setSelectionRange(position, position + searchInput.value.length);
+	}
+}
+
+prevButton.addEventListener("click", () => {
+	if (matches.length > 0) {
+		currentIndex = (currentIndex - 1 + matches.length) % matches.length;
+		highlightMatch();
+	}
+});
+
+nextButton.addEventListener("click", () => {
+	if (matches.length > 0) {
+		currentIndex = (currentIndex + 1) % matches.length;
+		highlightMatch();
+	}
+});
+
+searchInput.addEventListener("input", search);
+
+replaceButton.addEventListener("click", () => {
+	if (matches.length > 0) {
+		const content = document.getElementById("markdownInput").value;
+		const position = matches[currentIndex];
+		const beforeText = content.slice(0, position);
+		const afterText = content.slice(position + searchInput.value.length);
+
+		document.getElementById("markdownInput").value = beforeText + replaceInput.value + afterText;
+		renderPreview()
+		search(); 
+	}
+});
+
+replaceAllButton.addEventListener("click", () => {
+	const searchText = searchInput.value.trim();
+	const replaceText = replaceInput.value;
+	const content = document.getElementById("markdownInput").value;
+
+	if (searchText) {
+		const regex = new RegExp(searchText, "gi");
+		document.getElementById("markdownInput").value = content.replace(regex, replaceText);
+		renderPreview()
+		search();
+	}
+});
+
+
 markdownInput.addEventListener("input", () => {
 	updateInfo();
 	renderPreview();
@@ -189,6 +283,11 @@ markdownInput.addEventListener("input", () => {
 markdownInput.addEventListener("click", updateInfo);
 markdownInput.addEventListener("change", updateInfo);
 markdownInput.addEventListener("keyup", updateInfo);
+
+markdownInput.addEventListener("scroll", () => {
+	const scrollPosition = markdownInput.scrollTop;
+	preview.scrollTop = scrollPosition;
+});
 
 downloadMarkdownButton.addEventListener("click", () => {
 	const markdownContent = markdownInput.value;
