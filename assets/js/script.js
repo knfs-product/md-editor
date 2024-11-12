@@ -257,6 +257,7 @@ replaceButton.addEventListener("click", () => {
 		const afterText = content.slice(position + searchInput.value.length);
 
 		document.getElementById("markdownInput").value = beforeText + replaceInput.value + afterText;
+		undoStack.push(markdownInput.value);
 		renderPreview()
 		search(); 
 	}
@@ -270,6 +271,7 @@ replaceAllButton.addEventListener("click", () => {
 	if (searchText) {
 		const regex = new RegExp(searchText, "gi");
 		document.getElementById("markdownInput").value = content.replace(regex, replaceText);
+		undoStack.push(markdownInput.value);
 		renderPreview()
 		search();
 	}
